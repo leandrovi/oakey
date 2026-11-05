@@ -98,9 +98,13 @@ function generate(): { drafts: Draft[]; cards: Card[] } {
       drafts.push({ accountId: card as CardId, at: at(y, m, d, between(8, 20)), description: name, counterparty: name, category, type: "card", direction: "debit", amount: between(lo, hi) });
     }
   }
-  const recentCard = drafts.filter((d) => d.type === "card").sort((a, b) => b.at.getTime() - a.at.getTime());
+  // A draft's hour-of-day (approximated as UTC-5 regardless of DST) can push a current-day
+  // entry past midnight UTC into the next calendar day, landing after NOW. Drop those so no
+  // transaction is ever dated in the future.
+  const dated = drafts.filter((d) => d.at.getTime() <= NOW.getTime());
+  const recentCard = dated.filter((d) => d.type === "card").sort((a, b) => b.at.getTime() - a.at.getTime());
   recentCard.slice(0, 3).forEach((d) => (d.pending = true));
-  return { drafts, cards };
+  return { drafts: dated, cards };
 }
 
 const OPENING: Record<string, number> = { [CHECKING_ID]: 18_450_000, [SAVINGS_ID]: 32_000_000 };
