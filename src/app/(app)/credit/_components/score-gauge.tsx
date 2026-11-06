@@ -8,13 +8,13 @@ function polar(cx: number, cy: number, r: number, angleDeg: number) {
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
-/** Arc path along the top-facing semicircle, from 180° (left) sweeping through 270° (top) to 360° (right). */
+/** Upper semicircle, left to right over the top. A full half-turn stops short of 360° so the short arc stays on top. */
 function arcPath(cx: number, cy: number, r: number, fraction: number) {
+  const clamped = Math.max(0, Math.min(1, fraction));
   const start = polar(cx, cy, r, 180);
-  const endAngle = 180 + 180 * Math.max(0, Math.min(1, fraction));
+  const endAngle = Math.min(180 + 180 * clamped, 359.99);
   const end = polar(cx, cy, r, endAngle);
-  const largeArc = fraction > 0.5 ? 1 : 0;
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 0 1 ${end.x} ${end.y}`;
 }
 
 export function ScoreGauge({ score }: { score: number }) {
