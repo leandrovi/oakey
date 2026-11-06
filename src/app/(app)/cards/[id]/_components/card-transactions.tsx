@@ -1,11 +1,14 @@
+"use client";
+
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Money } from "@/components/money";
-import { transactions } from "@/lib/mock/seed";
+import { useBank } from "@/components/bank/provider";
 import type { Card as CardType } from "@/lib/domain/types";
 
 export function CardTransactions({ card }: { card: CardType }) {
+  const { transactions } = useBank();
   const rows = transactions.filter((t) => t.accountId === card.id).slice(0, 12);
   return (
     <Card>

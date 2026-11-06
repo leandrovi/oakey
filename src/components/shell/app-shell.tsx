@@ -7,7 +7,7 @@ import { OakeyLogo } from "@/components/brand/logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { user } from "@/lib/mock/seed";
+import { useBank } from "@/components/bank/provider";
 import { cn } from "@/lib/utils";
 import { NAV } from "./nav";
 import { ThemeToggle } from "./theme-toggle";
@@ -32,6 +32,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function UserChip() {
+  const { user } = useBank();
   return (
     <Link href="/settings" className="flex items-center gap-3 rounded-lg p-2 hover:bg-sidebar-accent">
       <Avatar className="size-8"><AvatarFallback className="bg-primary text-primary-foreground text-xs">{user.firstName[0]}{user.lastName[0]}</AvatarFallback></Avatar>

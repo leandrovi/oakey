@@ -20,17 +20,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <p className="font-heading text-3xl leading-[1.15] font-medium tracking-tight">
             Banking that keeps up with how your business actually moves money.
           </p>
-          <div className="rounded-2xl bg-white/10 p-5 ring-1 ring-white/15">
-            <p className="text-sm text-primary-foreground/80">Cash on hand</p>
-            <p className="mt-1 font-heading text-3xl tabular font-medium">$505,320.00</p>
-            <p className="mt-2 text-xs text-primary-foreground/70">Checking + Reserve, updated just now</p>
-          </div>
+          <p className="text-sm text-primary-foreground/80">Checking, savings, a card, and domestic wires. The balance you see is the sum of the ledger.</p>
         </div>
-        <p className="relative text-sm text-primary-foreground/70">
-          &ldquo;We moved our whole treasury to Oakey in a week. Wires that used to take a phone call now take a
-          click.&rdquo;
-          <span className="mt-1 block text-primary-foreground/50">— Alex Rivera, Northwind Studio</span>
-        </p>
+        <p className="relative text-sm text-primary-foreground/70">Checking, savings, cards, and domestic wires.</p>
       </div>
       <div className="relative flex flex-col px-6 py-10 sm:px-10 lg:px-16">
         <div className="flex items-center justify-between lg:justify-end">
@@ -41,7 +33,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <ThemeToggle />
         </div>
         <div className="flex flex-1 items-center justify-center py-10">
-          <div className="w-full max-w-sm">{children}</div>
+          <div className="w-full max-w-sm">
+            <div id="clerk-captcha" />
+            {children}
+          </div>
         </div>
       </div>
     </div>

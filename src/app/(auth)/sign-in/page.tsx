@@ -7,11 +7,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { identify, sendSignInCode } from "../_lib/fake-auth";
+import { useOakeyAuth } from "../_lib/use-oakey-auth";
 import { emailSchema } from "../_lib/schemas";
 
 export default function SignInPage() {
   const router = useRouter();
+  const { identify, sendSignInCode } = useOakeyAuth();
   const [step, setStep] = useState<"email" | "choose">("email");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -38,8 +39,12 @@ export default function SignInPage() {
 
   async function useEmailCode() {
     setSubmitting(true);
-    await sendSignInCode(email);
+    const result = await sendSignInCode(email);
     setSubmitting(false);
+    if (result.status === "error") {
+      setError(result.message);
+      return;
+    }
     router.push(`/sign-in/verify?email=${encodeURIComponent(email)}`);
   }
 
@@ -59,6 +64,7 @@ export default function SignInPage() {
             </button>
           </p>
         </div>
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="space-y-2">
           <Button className="w-full justify-between" variant="outline" disabled={submitting} onClick={useEmailCode}>
             <span className="inline-flex items-center gap-2">

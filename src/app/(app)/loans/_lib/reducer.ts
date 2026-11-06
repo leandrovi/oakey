@@ -4,7 +4,8 @@ export type LoansAction =
   | { type: "request"; loan: Loan }
   | { type: "cancel"; id: LoanId }
   | { type: "payInstallment"; id: LoanId }
-  | { type: "payOff"; id: LoanId };
+  | { type: "payOff"; id: LoanId }
+  | { type: "hydrate"; loans: Loan[] };
 
 /** The amount owed right now if paid off today: the balance before the next unpaid installment. */
 export function payoffAmount(loan: Loan): Cents {
@@ -43,6 +44,7 @@ function updateLoan(loan: Loan, action: LoansAction): Loan {
 }
 
 export function loansReducer(state: Loan[], action: LoansAction): Loan[] {
+  if (action.type === "hydrate") return action.loans;
   if (action.type === "request") return [action.loan, ...state];
   return state.map((loan) => (loan.id === action.id ? updateLoan(loan, action) : loan));
 }

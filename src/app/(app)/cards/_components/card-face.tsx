@@ -1,6 +1,7 @@
 import { Snowflake } from "lucide-react";
 import type { Card } from "@/lib/domain/types";
 import { OakeyMark } from "@/components/brand/logo";
+import { TiltCard } from "@/components/ui/tilt-card";
 import { cn } from "@/lib/utils";
 
 const KIND_LABEL: Record<Card["kind"], string> = { virtual: "Virtual", physical: "Physical" };
@@ -10,6 +11,7 @@ export function CardFace({ card, className }: { card: Card; className?: string }
   const frozen = card.status === "frozen";
   const inactive = card.status === "lost" || card.status === "canceled";
   return (
+    <TiltCard maxTilt={8} className="block w-full">
     <div
       className={cn(
         "relative aspect-[1.586/1] w-full overflow-hidden rounded-2xl p-5 text-[oklch(0.96_0.01_85)] shadow-sm",
@@ -59,5 +61,6 @@ export function CardFace({ card, className }: { card: Card; className?: string }
         </div>
       )}
     </div>
+    </TiltCard>
   );
 }

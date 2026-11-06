@@ -1,39 +1,26 @@
 "use client";
 
-import { Laptop, ShieldCheck, Smartphone } from "lucide-react";
+import { Laptop, ShieldCheck } from "lucide-react";
+import { useClerk } from "@clerk/nextjs";
 import { useState } from "react";
 import { toast } from "sonner";
-import { resetPassword, DEMO_EMAIL } from "@/app/(auth)/_lib/fake-auth";
+import { useOakeyAuth } from "@/app/(auth)/_lib/use-oakey-auth";
 import { newPasswordSchema } from "@/app/(auth)/_lib/schemas";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-interface Session {
-  id: string;
-  device: string;
-  icon: "laptop" | "phone";
-  location: string;
-  lastActive: string;
-  current?: boolean;
-}
-
-const INITIAL_SESSIONS: Session[] = [
-  { id: "sess_01", device: "MacBook Pro · Chrome", icon: "laptop", location: "Boston, MA", lastActive: "Active now", current: true },
-  { id: "sess_02", device: "iPhone 16 · Oakey app", icon: "phone", location: "Boston, MA", lastActive: "2 hours ago" },
-  { id: "sess_03", device: "Windows · Edge", icon: "laptop", location: "New York, NY", lastActive: "3 days ago" },
-];
-
 export function SecurityTab() {
+  const clerk = useClerk();
+  const { changePassword } = useOakeyAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<{ current?: string; password?: string; confirmPassword?: string }>({});
   const [submitting, setSubmitting] = useState(false);
-  const [sessions, setSessions] = useState(INITIAL_SESSIONS);
 
-  async function changePassword(e: React.FormEvent) {
+  async function submitPassword(e: React.FormEvent) {
     e.preventDefault();
     if (!currentPassword) {
       setErrors({ current: "Enter your current password." });
@@ -50,23 +37,17 @@ export function SecurityTab() {
       return;
     }
     setSubmitting(true);
-    await resetPassword(DEMO_EMAIL, parsed.data.password);
+    const result = await changePassword(currentPassword, parsed.data.password);
     setSubmitting(false);
+    if (result.status === "error") {
+      setErrors({ password: result.message });
+      return;
+    }
     setCurrentPassword("");
     setPassword("");
     setConfirmPassword("");
     setErrors({});
     toast.success("Password updated");
-  }
-
-  function signOutSession(id: string) {
-    setSessions((xs) => xs.filter((s) => s.id !== id));
-    toast("Signed out of that device");
-  }
-
-  function signOutOthers() {
-    setSessions((xs) => xs.filter((s) => s.current));
-    toast("Signed out of all other sessions");
   }
 
   return (
@@ -77,7 +58,7 @@ export function SecurityTab() {
           <CardDescription>Choose a password you don&apos;t use anywhere else.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form className="max-w-sm space-y-3" onSubmit={changePassword}>
+          <form className="max-w-sm space-y-3" onSubmit={submitPassword}>
             <div className="space-y-1.5">
               <Label htmlFor="current-password">Current password</Label>
               <Input
@@ -137,37 +118,23 @@ export function SecurityTab() {
         <CardHeader>
           <CardTitle>Active sessions</CardTitle>
           <CardDescription>Where you&apos;re currently signed in.</CardDescription>
-          <CardAction>
-            <Button variant="outline" size="sm" onClick={signOutOthers} disabled={sessions.length <= 1}>
-              Sign out of all other sessions
-            </Button>
-          </CardAction>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {sessions.map((session) => {
-            const Icon = session.icon === "laptop" ? Laptop : Smartphone;
-            return (
-              <div key={session.id} className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <Icon className="size-4 text-muted-foreground" />
-                  <div className="text-sm">
-                    <p className="font-medium">
-                      {session.device}
-                      {session.current && <span className="ml-2 text-xs text-success">This device</span>}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {session.location} · {session.lastActive}
-                    </p>
-                  </div>
-                </div>
-                {!session.current && (
-                  <Button variant="ghost" size="sm" onClick={() => signOutSession(session.id)}>
-                    Sign out
-                  </Button>
-                )}
+        <CardContent>
+          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Laptop className="size-4 text-muted-foreground" />
+              <div className="text-sm">
+                <p className="font-medium">
+                  This browser
+                  <span className="ml-2 text-xs text-success">This device</span>
+                </p>
+                <p className="text-muted-foreground">Active now</p>
               </div>
-            );
-          })}
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => clerk.signOut({ redirectUrl: "/" })}>
+              Sign out
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

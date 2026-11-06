@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Send } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/shell/page-header";
+import { useBank } from "@/components/bank/provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { recipients as seedRecipients, wires as seedWires } from "@/lib/mock/seed";
+import type { BankWire } from "@/lib/ledger/project";
 import type { Recipient, Wire } from "@/lib/domain/types";
+import { cancelWireAction, deleteRecipientAction, saveRecipientAction } from "@/server/actions";
 import { CancelWireDialog } from "./cancel-wire-dialog";
 import { MoveMoneyDialog } from "./move-money-dialog";
 import { RecipientsPanel } from "./recipients-panel";
@@ -15,29 +19,58 @@ import { WireDetailSheet } from "./wire-detail-sheet";
 import { WireRow } from "./wire-row";
 import { IN_FLIGHT_STATUSES } from "../_lib/status";
 
-function byNewest(a: Wire, b: Wire) {
+function byNewest(a: BankWire, b: BankWire) {
   return b.createdAt.localeCompare(a.createdAt);
 }
 
 export function TransfersPageClient() {
-  const [wires, setWires] = useState<Wire[]>(seedWires);
-  const [recipients, setRecipients] = useState<Recipient[]>(seedRecipients);
-  const [detailWireId, setDetailWireId] = useState<Wire["id"] | null>(null);
-  const [cancelTarget, setCancelTarget] = useState<Wire | null>(null);
+  const router = useRouter();
+  const { wires, recipients } = useBank();
+  const [detailWireId, setDetailWireId] = useState<BankWire["id"] | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<BankWire | null>(null);
 
-  const recipientFor = (wire: Wire) => recipients.find((r) => r.id === wire.recipientId);
+  const recipientFor = (wire: BankWire) => recipients.find((r) => r.id === wire.recipientId);
   const inFlight = wires.filter((w) => IN_FLIGHT_STATUSES.includes(w.status)).sort(byNewest);
   const history = wires.filter((w) => !IN_FLIGHT_STATUSES.includes(w.status)).sort(byNewest);
   const detailWire = wires.find((w) => w.id === detailWireId) ?? null;
 
   function requestCancel(wire: Wire) {
-    setCancelTarget(wire);
+    setCancelTarget(wires.find((item) => item.id === wire.id) ?? null);
   }
 
-  function confirmCancel(wire: Wire) {
-    setWires((ws) => ws.map((w) => (w.id === wire.id ? { ...w, status: "canceled" } : w)));
+  async function confirmCancel(wire: Wire) {
+    const result = await cancelWireAction({ idempotencyKey: crypto.randomUUID(), wireId: wire.id });
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
     setCancelTarget(null);
     setDetailWireId(null);
+    router.refresh();
+  }
+
+  async function addRecipient(recipient: Recipient) {
+    const result = await saveRecipientAction({
+      id: recipient.id,
+      name: recipient.name,
+      addressLine1: recipient.address.line1,
+      addressLine2: recipient.address.line2,
+      city: recipient.address.city,
+      state: recipient.address.state,
+      postalCode: recipient.address.postalCode,
+      bankName: recipient.bankName,
+      routingNumber: recipient.routingNumber,
+      accountNumber: recipient.accountNumber,
+      confirmAccountNumber: recipient.accountNumber,
+    });
+    if (!result.ok) toast.error(result.message);
+    else router.refresh();
+  }
+
+  async function removeRecipient(id: string) {
+    const result = await deleteRecipientAction({ id });
+    if (!result.ok) toast.error(result.message);
+    else router.refresh();
   }
 
   return (
@@ -92,8 +125,8 @@ export function TransfersPageClient() {
         <TabsContent value="recipients" className="pt-4">
           <RecipientsPanel
             recipients={recipients}
-            onAdd={(r) => setRecipients((rs) => [r, ...rs])}
-            onDelete={(id) => setRecipients((rs) => rs.filter((r) => r.id !== id))}
+            onAdd={addRecipient}
+            onDelete={removeRecipient}
           />
         </TabsContent>
       </Tabs>

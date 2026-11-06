@@ -15,10 +15,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { accounts, recipients as seedRecipients } from "@/lib/mock/seed";
-import { formatCents } from "@/lib/domain/money";
+import { useBank } from "@/components/bank/provider";
+import { formatCents, parseDollars } from "@/lib/domain/money";
 import { WIRE_FEE, wireSettlementDate } from "@/lib/domain/fedwire";
-import { NOW } from "@/lib/mock/seed";
+import { submitWireAction } from "@/server/actions";
 import type { Address, Cents, Recipient, RecipientId, RoutingNumber } from "@/lib/domain/types";
 import { newRecipientSchema, WIRE_PURPOSES, wireAmountSchema, type NewRecipientInput, type WirePurpose } from "../../_lib/wire-form";
 
@@ -99,13 +99,15 @@ function StepShell({
 
 export function WireFlow() {
   const router = useRouter();
+  const { accounts, recipients } = useBank();
   const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
 
   const [fromAccountId, setFromAccountId] = useState<string>(accounts[0]?.id ?? "");
 
-  const [localRecipients, setLocalRecipients] = useState<Recipient[]>(seedRecipients);
-  const [recipientMode, setRecipientMode] = useState<"saved" | "new">(seedRecipients.length > 0 ? "saved" : "new");
-  const [recipientId, setRecipientId] = useState<string>(seedRecipients[0]?.id ?? "");
+  const [localRecipients, setLocalRecipients] = useState<Recipient[]>(recipients);
+  const [recipientMode, setRecipientMode] = useState<"saved" | "new">(recipients.length > 0 ? "saved" : "new");
+  const [recipientId, setRecipientId] = useState<string>(recipients[0]?.id ?? "");
   const [newRecipientForm, setNewRecipientForm] = useState<NewRecipientInput>(EMPTY_RECIPIENT);
   const [newRecipientErrors, setNewRecipientErrors] = useState<Record<string, string>>({});
 
@@ -120,7 +122,7 @@ export function WireFlow() {
 
   const fromAccount = accounts.find((a) => a.id === fromAccountId) ?? accounts[0];
   const recipient = localRecipients.find((r) => r.id === recipientId);
-  const settlement = wireSettlementDate(NOW);
+  const settlement = wireSettlementDate(new Date());
 
   function field<K extends keyof NewRecipientInput>(key: K) {
     return {
@@ -183,8 +185,40 @@ export function WireFlow() {
     setStep(3);
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
+    if (submitting || !purpose) return;
+    const centsAmount = parseDollars(amount);
+    const chosen = localRecipients.find((item) => item.id === recipientId);
+    if (centsAmount == null || !chosen) return;
+    const saved = recipients.some((item) => item.id === chosen.id);
+    setSubmitting(true);
+    const result = await submitWireAction({
+      idempotencyKey,
+      fromAccountId,
+      amount: centsAmount,
+      memo,
+      purpose,
+      recipientId: saved ? recipientId : undefined,
+      newRecipient: saved ? undefined : {
+        name: chosen.name,
+        addressLine1: chosen.address.line1,
+        addressLine2: chosen.address.line2 ?? "",
+        city: chosen.address.city,
+        state: chosen.address.state,
+        postalCode: chosen.address.postalCode,
+        bankName: chosen.bankName,
+        routingNumber: chosen.routingNumber,
+        accountNumber: chosen.accountNumber,
+        confirmAccountNumber: chosen.accountNumber,
+      },
+    });
+    setSubmitting(false);
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
     toast.success("Wire submitted");
+    router.refresh();
     setStep(4);
   }
 
@@ -375,7 +409,7 @@ export function WireFlow() {
 
   if (step === 3) {
     return (
-      <StepShell stepIndex={3} title="Review your wire" onBack={() => setStep(2)} onNext={handleConfirm} nextLabel="Confirm & send">
+      <StepShell stepIndex={3} title="Review your wire" onBack={() => setStep(2)} onNext={handleConfirm} nextLabel={submitting ? "Sending…" : "Confirm & send"}>
         <div className="flex flex-col divide-y divide-border rounded-xl border border-border">
           <ReviewRow label="From" value={fromAccount ? `${fromAccount.name} ••${fromAccount.mask}` : "—"} onEdit={() => setStep(0)} />
           <ReviewRow label="To" value={recipient?.name ?? "—"} detail={recipient ? `${recipient.bankName} · ••${recipient.accountNumber.slice(-4)}` : undefined} onEdit={() => setStep(1)} />

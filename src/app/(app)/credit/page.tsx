@@ -1,15 +1,18 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/shell/page-header";
+import { useBank } from "@/components/bank/provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { creditScore } from "@/lib/mock/seed";
 import { ScoreGauge } from "./_components/score-gauge";
 import { ScoreHistoryChart } from "./_components/score-history-chart";
 import { FactorsList } from "./_components/factors-list";
 
 export default function CreditPage() {
+  const { creditScore } = useBank();
   return (
     <div>
       <PageHeader title="Credit score" description="Your business credit score, what drives it, and how it has moved." />
