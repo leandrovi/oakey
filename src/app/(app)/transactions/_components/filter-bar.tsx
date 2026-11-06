@@ -12,11 +12,17 @@ import { FiltersPanel } from "./filters-panel";
 
 export function FilterBar({
   filters,
+  query,
+  onQueryChange,
+  onQueryCommit,
   onChange,
   accounts,
   onExport,
 }: {
   filters: TransactionFilters;
+  query: string;
+  onQueryChange: (query: string) => void;
+  onQueryCommit: () => void;
   onChange: (patch: Partial<TransactionFilters>) => void;
   accounts: AccountOption[];
   onExport: () => void;
@@ -27,7 +33,18 @@ export function FilterBar({
     <div className="flex flex-wrap items-center gap-2">
       <InputGroup className="max-w-xs">
         <InputGroupAddon><Search className="size-4" /></InputGroupAddon>
-        <InputGroupInput placeholder="Search description or counterparty" aria-label="Search transactions" value={filters.q} onChange={(e) => onChange({ q: e.target.value })} />
+        <InputGroupInput
+          placeholder="Search description or counterparty"
+          aria-label="Search transactions"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onQueryCommit();
+            }
+          }}
+        />
       </InputGroup>
 
       <div className="hidden sm:block">

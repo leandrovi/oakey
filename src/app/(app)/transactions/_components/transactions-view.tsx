@@ -1,12 +1,13 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { useBank } from "@/components/bank/provider";
 import type { Transaction } from "@/lib/domain/types";
 import { filterTransactions, filtersFromSearchParams, filtersToSearchParams, paginate, sortByPostedAtDesc, type TransactionFilters } from "../_lib/filters";
+import { useDebouncedSearchQuery } from "../_lib/search-query";
 import { transactionsToCsv } from "../_lib/csv";
 import { accountNameMap, accountOptions } from "../_lib/options";
 import { ActiveFilterChips } from "./active-filter-chips";
@@ -39,6 +40,13 @@ export function TransactionsView() {
 
   const filters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams]);
   const page = Number(searchParams.get("page") ?? "1") || 1;
+  const filtersRef = useRef(filters);
+  const pathnameRef = useRef(pathname);
+
+  useEffect(() => {
+    filtersRef.current = filters;
+    pathnameRef.current = pathname;
+  }, [filters, pathname]);
 
   const accountOpts = useMemo(() => accountOptions(accounts, cards), []);
   const accountNames = useMemo(() => accountNameMap(accounts, cards), []);
@@ -46,16 +54,31 @@ export function TransactionsView() {
   const pushParams = useCallback(
     (params: URLSearchParams) => {
       const query = params.toString();
-      router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+      router.push(query ? `${pathnameRef.current}?${query}` : pathnameRef.current, { scroll: false });
     },
-    [router, pathname],
+    [router],
   );
+
+  const writeQuery = useCallback(
+    (q: string, mode: "push" | "replace") => {
+      const params = filtersToSearchParams({ ...filtersRef.current, q });
+      const query = params.toString();
+      const href = query ? `${pathnameRef.current}?${query}` : pathnameRef.current;
+      const navigate = mode === "replace" ? router.replace : router.push;
+      navigate(href, { scroll: false });
+    },
+    [router],
+  );
+
+  const search = useDebouncedSearchQuery(filters.q, writeQuery);
 
   const handleFiltersChange = useCallback(
     (patch: Partial<TransactionFilters>) => {
-      pushParams(filtersToSearchParams({ ...filters, ...patch }));
+      const q = "q" in patch ? (patch.q ?? "") : search.consumeDraft();
+      if ("q" in patch) search.replaceDraft(q);
+      pushParams(filtersToSearchParams({ ...filtersRef.current, ...patch, q }));
     },
-    [filters, pushParams],
+    [pushParams, search],
   );
 
   const handlePageChange = useCallback(
@@ -78,7 +101,15 @@ export function TransactionsView() {
 
   return (
     <div className="space-y-4">
-      <FilterBar filters={filters} onChange={handleFiltersChange} accounts={accountOpts} onExport={handleExport} />
+      <FilterBar
+        filters={filters}
+        query={search.query}
+        onQueryChange={search.onQueryChange}
+        onQueryCommit={search.commitQuery}
+        onChange={handleFiltersChange}
+        accounts={accountOpts}
+        onExport={handleExport}
+      />
       <ActiveFilterChips filters={filters} onChange={handleFiltersChange} accounts={accountOpts} />
 
       <Card className="py-0">
