@@ -1,0 +1,78 @@
+"use client";
+
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { PageHeader } from "@/components/shell/page-header";
+import { NumberTicker } from "@/components/ui/number-ticker";
+import { formatCents } from "@/lib/domain/money";
+import { accounts, creditCard, NOW, transactions, user } from "@/lib/mock/seed";
+import { cn } from "@/lib/utils";
+import { AccountCards } from "./_components/account-cards";
+import { BurnRunway } from "./_components/burn-runway";
+import { CashFlowChart } from "./_components/cash-flow-chart";
+import { RecentTransactions } from "./_components/recent-transactions";
+import { TopCategories } from "./_components/top-categories";
+import {
+  averageMonthlyNetBurn,
+  averageMonthlySpend,
+  cashDelta,
+  monthlyCashFlow,
+  recentTransactions,
+  runway,
+  topCategoriesThisMonth,
+  totalCashCents,
+} from "./_lib/metrics";
+
+/** The business's clock, not the server's or visitor's: reads the fixed `NOW` in its home time zone so the greeting never flips with where this renders. */
+function greetingFor(now: Date): string {
+  const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: "America/New_York" }).format(now));
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+export default function OverviewPage() {
+  const cash = totalCashCents(accounts);
+  const delta = cashDelta(accounts, transactions, NOW);
+  const flow = monthlyCashFlow(accounts, transactions, NOW, 12);
+  const avgSpend = averageMonthlySpend(accounts, transactions, NOW, 3);
+  const netBurn = averageMonthlyNetBurn(accounts, transactions, NOW, 3);
+  const runwayResult = runway(cash, netBurn);
+  const topCategories = topCategoriesThisMonth(transactions, NOW, 5);
+  const recent = recentTransactions(transactions, 5);
+  const deltaUp = delta >= 0;
+
+  return (
+    <div className="space-y-8">
+      <PageHeader title={`${greetingFor(NOW)}, ${user.firstName}`} description={`${user.businessName} · ${NOW.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" })}`} />
+
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Total cash</p>
+        <div className="mt-1 flex flex-wrap items-baseline gap-3">
+          <NumberTicker locale="en-US"
+            value={cash / 100}
+            format={{ style: "currency", currency: "USD", maximumFractionDigits: 0 }}
+            className="font-heading text-4xl font-medium tracking-tight md:text-5xl"
+          />
+          <span className={cn("flex items-center gap-1 text-sm font-medium", deltaUp ? "text-success" : "text-destructive")}>
+            {deltaUp ? <ArrowUpRight className="size-4" /> : <ArrowDownRight className="size-4" />}
+            {formatCents(delta, { whole: true, signed: true })} vs last month
+          </span>
+        </div>
+      </div>
+
+      <AccountCards accounts={accounts} creditCard={creditCard} />
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <CashFlowChart flow={flow} />
+        </div>
+        <BurnRunway avgSpend={avgSpend} runwayResult={runwayResult} />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <TopCategories categories={topCategories} />
+        <RecentTransactions transactions={recent} />
+      </div>
+    </div>
+  );
+}
