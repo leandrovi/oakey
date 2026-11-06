@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Source_Code_Pro, Source_Sans_3 } from "next/font/google";
+import { Fraunces, Libre_Franklin, Source_Code_Pro } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const sourceSans = Source_Sans_3({ variable: "--font-source-sans", subsets: ["latin"] });
+const libreFranklin = Libre_Franklin({ variable: "--font-libre-franklin", subsets: ["latin"] });
 const sourceCode = Source_Code_Pro({ variable: "--font-source-code", subsets: ["latin"] });
 const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], axes: ["opsz", "SOFT"] });
 
@@ -23,7 +23,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${sourceSans.variable} ${sourceCode.variable} ${fraunces.variable} h-full antialiased`}>
+    <html lang="en" suppressHydrationWarning className={`${libreFranklin.variable} ${sourceCode.variable} ${fraunces.variable} h-full antialiased`}>
       <body className="min-h-full">
         <ThemeProvider>
           {children}

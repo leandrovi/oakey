@@ -6,7 +6,7 @@ export function TypographySection() {
     <section className="space-y-6">
       <div>
         <h2 className="font-heading text-xl font-medium tracking-tight">Typography</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Fraunces for display, Source Sans 3 for UI, Source Code Pro for card numbers and ids.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Fraunces for display, Libre Franklin for UI, Source Code Pro for card numbers and ids.</p>
       </div>
       <div className="space-y-5 rounded-2xl bg-muted/60 p-6">
         <div>
@@ -19,11 +19,11 @@ export function TypographySection() {
         </div>
         <div>
           <p className="text-base">The quick oak sprouted twelve sturdy, well-rooted leaves.</p>
-          <p className="mt-1 text-xs text-muted-foreground">font-sans (Source Sans 3) · 16px · regular</p>
+          <p className="mt-1 text-xs text-muted-foreground">font-sans (Libre Franklin) · 16px · regular</p>
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Secondary text sits here, calm and quiet, never competing with the number above it.</p>
-          <p className="mt-1 text-xs text-muted-foreground">font-sans (Source Sans 3) · 14px · muted-foreground</p>
+          <p className="mt-1 text-xs text-muted-foreground">font-sans (Libre Franklin) · 14px · muted-foreground</p>
         </div>
         <div>
           <p className="font-heading text-3xl font-medium tabular">
