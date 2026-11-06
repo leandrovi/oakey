@@ -12,15 +12,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Money } from "@/components/money";
 import { formatCents, parseDollars } from "@/lib/domain/money";
 import type { Cents } from "@/lib/domain/types";
-import { accounts, CHECKING_ID } from "@/lib/mock/seed";
+import { useBank } from "@/components/bank/provider";
 import { useCardsStore } from "../_lib/store";
 
 type Option = "minimum" | "statement" | "full" | "custom";
 
 export function PayCardDialog() {
   const { state, dispatch } = useCardsStore();
+  const { accounts } = useBank();
   const { creditCard } = state;
-  const checking = accounts.find((a) => a.id === CHECKING_ID);
+  const checking = accounts.find((account) => account.kind === "checking");
   const [open, setOpen] = useState(false);
   const [option, setOption] = useState<Option>("statement");
   const [custom, setCustom] = useState("");

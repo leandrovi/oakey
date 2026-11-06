@@ -6,11 +6,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DEMO_PASSWORD, sendSignInCode, signInWithPassword } from "../../_lib/fake-auth";
+import { useOakeyAuth } from "../../_lib/use-oakey-auth";
 import { signInPasswordSchema } from "../../_lib/schemas";
 
 export function SignInPasswordView() {
   const router = useRouter();
+  const { sendSignInCode, signInWithPassword } = useOakeyAuth();
   const email = useSearchParams().get("email") ?? "";
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +57,6 @@ export function SignInPasswordView() {
             aria-invalid={error ? true : undefined}
           />
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <p className="text-xs text-muted-foreground">Demo password: {DEMO_PASSWORD}</p>
         </div>
         <Button type="submit" className="w-full" disabled={submitting}>
           {submitting ? "Signing in…" : "Sign in"}

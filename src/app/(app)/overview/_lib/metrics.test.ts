@@ -53,11 +53,18 @@ describe("cashAsOf", () => {
     expect(asOf).toBe(3_000_000 - 50_000 + 20_000);
   });
 
-  it("ignores pending transactions, since the current balance already excludes them", () => {
+  it("ignores pending credits, since available cash never included them", () => {
     const transactions: Transaction[] = [
       txn({ accountId: checking.id, postedAt: "2026-11-02T00:00:00Z" as never, direction: "credit", amount: 50_000 as Cents, status: "pending" }),
     ];
     expect(cashAsOf(accounts, transactions, new Date("2026-11-01T00:00:00Z"))).toBe(3_000_000);
+  });
+
+  it("adds pending debit holds back so a past balance is not understated", () => {
+    const transactions: Transaction[] = [
+      txn({ accountId: checking.id, postedAt: "2026-11-02T00:00:00Z" as never, direction: "debit", amount: 15_000 as Cents, status: "pending" }),
+    ];
+    expect(cashAsOf(accounts, transactions, new Date("2026-11-01T00:00:00Z"))).toBe(3_015_000);
   });
 });
 

@@ -8,13 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OtpStep } from "../_components/otp-step";
-import { requestPasswordReset, resendCode, resetPassword } from "../_lib/fake-auth";
+import { useOakeyAuth } from "../_lib/use-oakey-auth";
 import { emailSchema, newPasswordSchema } from "../_lib/schemas";
 
 type Step = "email" | "code" | "password" | "done";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const { requestPasswordReset, resendCode, resetPassword, verifyPasswordResetCode } = useOakeyAuth();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -31,8 +32,12 @@ export default function ForgotPasswordPage() {
       return;
     }
     setSubmitting(true);
-    await requestPasswordReset(parsed.data);
+    const result = await requestPasswordReset(parsed.data);
     setSubmitting(false);
+    if (result.status === "error") {
+      setEmailError(result.message);
+      return;
+    }
     setEmail(parsed.data);
     setStep("code");
   }
@@ -50,8 +55,12 @@ export default function ForgotPasswordPage() {
       return;
     }
     setSubmitting(true);
-    await resetPassword(email, parsed.data.password);
+    const result = await resetPassword(email, parsed.data.password);
     setSubmitting(false);
+    if (result.status === "error") {
+      setPasswordErrors({ password: result.message });
+      return;
+    }
     setStep("done");
   }
 
@@ -65,7 +74,9 @@ export default function ForgotPasswordPage() {
             Enter the 6-digit code we sent to <span className="font-medium text-foreground">{email}</span> to reset your password.
           </>
         }
-        onVerify={async () => {
+        onVerify={async (code) => {
+          const result = await verifyPasswordResetCode(email, code);
+          if (result.status === "error") return { ok: false, message: result.message };
           setStep("password");
           return { ok: true };
         }}

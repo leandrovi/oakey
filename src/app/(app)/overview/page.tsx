@@ -4,11 +4,11 @@ import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { PageHeader } from "@/components/shell/page-header";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { formatCents } from "@/lib/domain/money";
-import { accounts, creditCard, NOW, transactions, user } from "@/lib/mock/seed";
+import { useBank } from "@/components/bank/provider";
 import { cn } from "@/lib/utils";
 import { AccountCards } from "./_components/account-cards";
 import { BurnRunway } from "./_components/burn-runway";
-import { CashFlowChart } from "./_components/cash-flow-chart";
+import { CashFlowChart, CashSplit } from "./_components/cash-flow-chart";
 import { RecentTransactions } from "./_components/recent-transactions";
 import { TopCategories } from "./_components/top-categories";
 import {
@@ -31,6 +31,8 @@ function greetingFor(now: Date): string {
 }
 
 export default function OverviewPage() {
+  const { accounts, creditCard, transactions, user, now } = useBank();
+  const NOW = new Date(now);
   const cash = totalCashCents(accounts);
   const delta = cashDelta(accounts, transactions, NOW);
   const flow = monthlyCashFlow(accounts, transactions, NOW, 12);
@@ -66,8 +68,10 @@ export default function OverviewPage() {
         <div className="lg:col-span-2">
           <CashFlowChart flow={flow} />
         </div>
-        <BurnRunway avgSpend={avgSpend} runwayResult={runwayResult} />
+        <CashSplit flow={flow} />
       </div>
+
+      <BurnRunway avgSpend={avgSpend} runwayResult={runwayResult} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <TopCategories categories={topCategories} />

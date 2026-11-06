@@ -15,7 +15,8 @@ export type CardsAction =
   | { type: "reportLost"; id: CardId }
   | { type: "cancel"; id: CardId; reason: CardCancelReason }
   | { type: "issue"; card: Card }
-  | { type: "payCreditCard"; amount: Cents };
+  | { type: "payCreditCard"; amount: Cents }
+  | { type: "hydrate"; state: CardsState };
 
 /** Canceled cards never change again; the UI confirms this is irreversible. */
 function isTerminal(card: Card): boolean {
@@ -58,6 +59,7 @@ function updateCard(card: Card, action: CardsAction): Card {
 }
 
 export function cardsReducer(state: CardsState, action: CardsAction): CardsState {
+  if (action.type === "hydrate") return action.state;
   switch (action.type) {
     case "issue":
       return { ...state, cards: [action.card, ...state.cards] };

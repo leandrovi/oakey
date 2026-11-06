@@ -89,7 +89,6 @@ export function OtpStep({
           </InputOTPGroup>
         </InputOTP>
         {error && <p className="text-sm text-destructive">{error}</p>}
-        <p className="text-xs text-muted-foreground">Demo code: 424242</p>
       </div>
       <Button className="w-full" disabled={submitting || code.length !== 6} onClick={() => submit(code)}>
         {submitting ? "Verifying…" : "Verify"}

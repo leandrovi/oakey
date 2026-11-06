@@ -2,10 +2,11 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { OtpStep } from "../../_components/otp-step";
-import { resendCode, verifySignUpCode } from "../../_lib/fake-auth";
+import { useOakeyAuth } from "../../_lib/use-oakey-auth";
 
 export function SignUpVerifyView() {
   const router = useRouter();
+  const { resendCode, verifySignUpCode } = useOakeyAuth();
   const email = useSearchParams().get("email") ?? "";
 
   return (

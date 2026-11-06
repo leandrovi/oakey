@@ -6,17 +6,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { user } from "@/lib/mock/seed";
+import { useBank } from "@/components/bank/provider";
+import { saveProfileAction } from "@/server/actions";
 import { ChangeEmailDialog } from "./change-email-dialog";
 
 export function ProfileTab() {
+  const { user } = useBank();
   const [firstName, setFirstName] = useState(user.firstName);
   const [lastName, setLastName] = useState(user.lastName);
   const [businessName, setBusinessName] = useState(user.businessName);
   const [email, setEmail] = useState(user.email);
   const [dirty, setDirty] = useState(false);
 
-  function save() {
+  async function save() {
+    const result = await saveProfileAction({ firstName, lastName, businessName });
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
     setDirty(false);
     toast.success("Profile saved");
   }

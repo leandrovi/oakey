@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Libre_Franklin, Source_Code_Pro } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -25,10 +26,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className={`${libreFranklin.variable} ${sourceCode.variable} ${fraunces.variable} h-full antialiased`}>
       <body className="min-h-full">
-        <ThemeProvider>
-          {children}
-          <Toaster richColors position="top-center" />
-        </ThemeProvider>
+        <ClerkProvider>
+          <ThemeProvider>
+            {children}
+            <Toaster richColors position="top-center" />
+          </ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

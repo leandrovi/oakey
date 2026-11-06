@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
-import { accounts, cards, NOW, transactions } from "@/lib/mock/seed";
+import { useBank } from "@/components/bank/provider";
 import type { Transaction } from "@/lib/domain/types";
 import { filterTransactions, filtersFromSearchParams, filtersToSearchParams, paginate, sortByPostedAtDesc, type TransactionFilters } from "../_lib/filters";
 import { transactionsToCsv } from "../_lib/csv";
@@ -33,6 +33,8 @@ export function TransactionsView() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { accounts, cards, transactions, now } = useBank();
+  const NOW = useMemo(() => new Date(now), [now]);
   const [selected, setSelected] = useState<Transaction | null>(null);
 
   const filters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams]);
@@ -65,7 +67,7 @@ export function TransactionsView() {
     [filters, pushParams],
   );
 
-  const filtered = useMemo(() => sortByPostedAtDesc(filterTransactions(transactions, filters, NOW)), [filters]);
+  const filtered = useMemo(() => sortByPostedAtDesc(filterTransactions(transactions, filters, NOW)), [transactions, filters, NOW]);
   const paged = useMemo(() => paginate(filtered, page, PAGE_SIZE), [filtered, page]);
 
   function handleExport() {

@@ -15,7 +15,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Money } from "@/components/money";
 import { amortizationSchedule, monthlyPayment, totalInterest } from "@/lib/domain/amortization";
 import { addCents, formatBps, formatCents, parseDollars } from "@/lib/domain/money";
-import { NOW } from "@/lib/mock/seed";
 import type { Cents, IsoDate, IsoDateTime, Loan, LoanId, LoanOffer } from "@/lib/domain/types";
 import { useLoansStore } from "../_lib/store";
 
@@ -32,7 +31,7 @@ export function SimulatorDialog({
   const [showSchedule, setShowSchedule] = useState(false);
   const amountId = useId();
 
-  const firstDueDate = format(addMonths(NOW, 1), "yyyy-MM-dd") as IsoDate;
+  const firstDueDate = format(addMonths(new Date(), 1), "yyyy-MM-dd") as IsoDate;
   const schedule = useMemo(
     () => amortizationSchedule(amount, offer.apr, term, firstDueDate),
     [amount, offer.apr, term, firstDueDate],
@@ -75,7 +74,7 @@ export function SimulatorDialog({
       termMonths: term,
       monthlyPayment: payment,
       status: "pending",
-      requestedAt: NOW.toISOString() as IsoDateTime,
+      requestedAt: new Date().toISOString() as IsoDateTime,
       schedule,
     };
     dispatch({ type: "request", loan });

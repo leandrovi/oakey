@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { signUp } from "../_lib/fake-auth";
+import { useOakeyAuth } from "../_lib/use-oakey-auth";
 import { passwordStrengthIssues, signUpSchema } from "../_lib/schemas";
 
 const PASSWORD_HINTS = ["At least 8 characters.", "At least one lowercase letter.", "At least one uppercase letter.", "At least one number."];
@@ -25,6 +25,7 @@ const EMPTY: FormState = { businessName: "", firstName: "", lastName: "", email:
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { signUp } = useOakeyAuth();
   const [form, setForm] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [submitting, setSubmitting] = useState(false);

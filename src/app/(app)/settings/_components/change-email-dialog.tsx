@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { requestEmailChange, verifyEmailChangeCode } from "@/app/(auth)/_lib/fake-auth";
+import { useOakeyAuth } from "@/app/(auth)/_lib/use-oakey-auth";
 import { emailSchema, otpSchema } from "@/app/(auth)/_lib/schemas";
 
 export function ChangeEmailDialog({ currentEmail, onChanged }: { currentEmail: string; onChanged: (email: string) => void }) {
+  const { requestEmailChange, verifyEmailChangeCode } = useOakeyAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"email" | "code">("email");
   const [newEmail, setNewEmail] = useState("");
@@ -39,8 +40,12 @@ export function ChangeEmailDialog({ currentEmail, onChanged }: { currentEmail: s
       return;
     }
     setSubmitting(true);
-    await requestEmailChange(parsed.data);
+    const result = await requestEmailChange(parsed.data);
     setSubmitting(false);
+    if (result.status === "error") {
+      setError(result.message);
+      return;
+    }
     setNewEmail(parsed.data);
     setError(null);
     setStep("code");
@@ -114,7 +119,7 @@ export function ChangeEmailDialog({ currentEmail, onChanged }: { currentEmail: s
             <DialogHeader>
               <DialogTitle>Enter the code</DialogTitle>
               <DialogDescription>
-                Sent to <span className="font-medium text-foreground">{newEmail}</span>. Demo code: 424242.
+                Sent to <span className="font-medium text-foreground">{newEmail}</span>.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3">

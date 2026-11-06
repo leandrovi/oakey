@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cents, parseDollars } from "@/lib/domain/money";
-import { NOW } from "@/lib/mock/seed";
 import type { Card, CardId, CardKind, Cents } from "@/lib/domain/types";
 import { useCardsStore } from "../_lib/store";
 
@@ -47,7 +46,7 @@ export function IssueCardDialog() {
 
   function issue() {
     if (!detailsValid || limitCents == null) return;
-    const exp = new Date(NOW);
+    const exp = new Date();
     exp.setFullYear(exp.getFullYear() + 4);
     const card: Card = {
       id: `card_${crypto.randomUUID().slice(0, 8)}` as CardId,

@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { useBank } from "@/components/bank/provider";
 import { Money } from "@/components/money";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,28 +19,30 @@ import {
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { accounts } from "@/lib/mock/seed";
 import { parseDollars } from "@/lib/domain/money";
-import type { AccountId, Cents } from "@/lib/domain/types";
+import type { Cents } from "@/lib/domain/types";
+import { transferAction } from "@/server/actions";
 import { moveMoneySchema } from "../_lib/wire-form";
 
-const balanceByAccountId = Object.fromEntries(accounts.map((a) => [a.id, a.balance])) as Record<AccountId, Cents>;
-
-function accountLabel(id: string) {
-  const account = accounts.find((a) => a.id === id);
-  return account ? `${account.name} (••${account.mask})` : id;
-}
-
 export function MoveMoneyDialog() {
+  const router = useRouter();
+  const { accounts } = useBank();
   const [open, setOpen] = useState(false);
   const [fromAccountId, setFromAccountId] = useState<string>(accounts[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const toAccountId = useMemo(() => accounts.find((a) => a.id !== fromAccountId)?.id ?? "", [fromAccountId]);
+  const toAccountId = useMemo(() => accounts.find((a) => a.id !== fromAccountId)?.id ?? "", [accounts, fromAccountId]);
   const parsedAmount = parseDollars(amount);
-  const schema = useMemo(() => moveMoneySchema(balanceByAccountId), []);
+  const balanceByAccountId = useMemo(() => Object.fromEntries(accounts.map((account) => [account.id, account.balance])), [accounts]);
+  const schema = useMemo(() => moveMoneySchema(balanceByAccountId), [balanceByAccountId]);
   const isValid = schema.safeParse({ fromAccountId, toAccountId, amount }).success;
+
+  function accountLabel(id: string) {
+    const account = accounts.find((item) => item.id === id);
+    return account ? `${account.name} (••${account.mask})` : id;
+  }
 
   function reset() {
     setAmount("");
@@ -46,15 +50,28 @@ export function MoveMoneyDialog() {
     setFromAccountId(accounts[0]?.id ?? "");
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     const result = schema.safeParse({ fromAccountId, toAccountId, amount });
-    if (!result.success) {
-      setError(result.error.issues[0]?.message ?? "Check the amount and try again.");
+    if (!result.success || parsedAmount == null) {
+      setError(result.success ? "Check the amount and try again." : result.error.issues[0]?.message ?? "Check the amount and try again.");
       return;
     }
-    toast.success(`Moved ${(parsedAmount! / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} to ${accountLabel(toAccountId)}`);
+    setSubmitting(true);
+    const moved = await transferAction({
+      idempotencyKey: crypto.randomUUID(),
+      fromAccountId,
+      toAccountId,
+      amount: parsedAmount,
+    });
+    setSubmitting(false);
+    if (!moved.ok) {
+      setError(moved.message);
+      return;
+    }
+    toast.success(`Moved ${(parsedAmount / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} to ${accountLabel(toAccountId)}`);
     setOpen(false);
     reset();
+    router.refresh();
   }
 
   return (
@@ -132,7 +149,7 @@ export function MoveMoneyDialog() {
           <Button variant="ghost" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm} disabled={!isValid}>
+          <Button onClick={handleConfirm} disabled={!isValid || submitting}>
             Confirm
           </Button>
         </DialogFooter>

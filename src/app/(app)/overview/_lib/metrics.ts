@@ -17,16 +17,19 @@ export function totalCashCents(accounts: DepositAccount[]): Cents {
 }
 
 /**
- * Reconstructs total cash as of a past instant by undoing every posted
- * movement on these accounts that happened after it. Avoids depending on
- * each transaction's `balanceAfter`, which pending entries don't have.
+ * Reconstructs posted cash as of a past instant. Deposit balances are available
+ * cash, so pending debit holds are added back before undoing later posted
+ * movements. Pending credits never increased the balance, so they stay out.
  */
 export function cashAsOf(accounts: DepositAccount[], transactions: Transaction[], asOf: Date): Cents {
   const ids = new Set<AccountId | CardId>(accounts.map((a) => a.id));
+  const pendingDebits = transactions
+    .filter((t) => ids.has(t.accountId) && t.status === "pending" && t.direction === "debit")
+    .reduce((sum, t) => sum + t.amount, 0);
   const movedSince = transactions
     .filter((t) => ids.has(t.accountId) && t.status === "posted" && new Date(t.postedAt) > asOf)
     .reduce((sum, t) => sum + (t.direction === "credit" ? t.amount : -t.amount), 0);
-  return (totalCashCents(accounts) - movedSince) as Cents;
+  return (totalCashCents(accounts) + pendingDebits - movedSince) as Cents;
 }
 
 /** Change in total cash since one month ago, positive when cash grew. */
