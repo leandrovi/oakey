@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { useSyncExternalStore } from "react";
 import { PageHeader } from "@/components/shell/page-header";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { formatCents } from "@/lib/domain/money";
@@ -21,18 +22,12 @@ import {
   topCategoriesThisMonth,
   totalCashCents,
 } from "./_lib/metrics";
-
-/** The business's clock, not the server's or visitor's: reads the fixed `NOW` in its home time zone so the greeting never flips with where this renders. */
-function greetingFor(now: Date): string {
-  const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: "America/New_York" }).format(now));
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-}
+import { readLocalClock, serverLocalClock, subscribeToLocalClock } from "./_lib/local-clock";
 
 export default function OverviewPage() {
   const { accounts, creditCard, transactions, user, now } = useBank();
   const NOW = new Date(now);
+  const clock = useSyncExternalStore(subscribeToLocalClock, readLocalClock, serverLocalClock);
   const cash = totalCashCents(accounts);
   const delta = cashDelta(accounts, transactions, NOW);
   const flow = monthlyCashFlow(accounts, transactions, NOW, 12);
@@ -45,7 +40,10 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={`${greetingFor(NOW)}, ${user.firstName}`} description={`${user.businessName} · ${NOW.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" })}`} />
+      <PageHeader
+        title={clock.greeting ? `${clock.greeting}, ${user.firstName}` : user.firstName}
+        description={clock.when ? `${user.businessName} · ${clock.when}` : user.businessName}
+      />
 
       <div>
         <p className="text-sm font-medium text-muted-foreground">Total cash</p>
