@@ -20,8 +20,8 @@ export function WireRow({
   onRequestCancel: (wire: Wire) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-border/80 px-4 py-3 transition-colors hover:border-border">
-      <button type="button" onClick={() => onOpen(wire)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-border/80 px-4 py-3 transition-colors hover:border-border hover:bg-muted/50">
+      <button type="button" onClick={() => onOpen(wire)} className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
         <div className="min-w-0">
           <p className="truncate font-medium">{recipient?.name ?? "Recipient"}</p>
           <p className="truncate text-sm text-muted-foreground">
